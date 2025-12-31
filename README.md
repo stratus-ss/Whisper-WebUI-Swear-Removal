@@ -3,7 +3,12 @@ A Gradio-based browser interface for [Whisper](https://github.com/openai/whisper
 
 ![screen](https://github.com/user-attachments/assets/caea3afd-a73c-40af-a347-8d57914b1d0f)
 
-
+## 🔱 Fork Differences
+This fork adds a **Swear Removal** feature for audiobook profanity filtering:
+- Automatic transcription with word-level timestamps
+- Intelligent profanity detection and censoring (mute or beep)
+- M4B audiobook format support with transcript caching
+- Comprehensive statistics and reporting
 
 ## Notebook
 If you wish to try this on Colab, you can do it in [here](https://colab.research.google.com/github/jhj0517/Whisper-WebUI/blob/master/notebook/whisper-webui.ipynb)!
