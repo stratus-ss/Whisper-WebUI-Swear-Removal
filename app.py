@@ -2,11 +2,9 @@ import os
 import argparse
 import gradio as gr
 from gradio_i18n import Translate, gettext as _
-import yaml
-
 from modules.utils.paths import (FASTER_WHISPER_MODELS_DIR, DIARIZATION_MODELS_DIR, OUTPUT_DIR, WHISPER_MODELS_DIR,
                                  INSANELY_FAST_WHISPER_MODELS_DIR, NLLB_MODELS_DIR, DEFAULT_PARAMETERS_CONFIG_PATH,
-                                 UVR_MODELS_DIR, I18N_YAML_PATH)
+                                 UVR_MODELS_DIR, I18N_YAML_PATH, SWEAR_REMOVAL_AUDIO_OUTPUT_DIR)
 from modules.utils.files_manager import load_yaml, MEDIA_EXTENSION
 from modules.whisper.whisper_factory import WhisperFactory
 from modules.translation.nllb_inference import NLLBInference
@@ -16,6 +14,10 @@ from modules.utils.youtube_manager import get_ytmetas
 from modules.translation.deepl_api import DeepLAPI
 from modules.whisper.data_classes import *
 from modules.utils.logger import get_logger
+from modules.swear_removal.swear_manager import SwearListManager
+from modules.swear_removal.audio_cleaner import AudioCleaner
+from modules.swear_removal.statistics import CensorshipStatistics
+from modules.ui.swear_removal_tab import SwearRemovalTab
 
 
 logger = get_logger()
@@ -41,6 +43,10 @@ class App:
         self.deepl_api = DeepLAPI(
             output_dir=os.path.join(self.args.output_dir, "translations")
         )
+        self.swear_manager = SwearListManager()
+        self.audio_cleaner = AudioCleaner()
+        self.stats_generator = CensorshipStatistics()
+        
         self.i18n = load_yaml(I18N_YAML_PATH)
         self.default_params = load_yaml(DEFAULT_PARAMETERS_CONFIG_PATH)
         logger.info(f"Use \"{self.args.whisper_type}\" implementation\n"
@@ -143,7 +149,7 @@ class App:
                         btn_run.click(fn=self.whisper_inf.transcribe_file,
                                       inputs=params,
                                       outputs=[tb_indicator, files_subtitles])
-                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=None)
+                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=tb_indicator)
 
                     with gr.TabItem(_("Youtube")):  # tab2
                         with gr.Row():
@@ -171,7 +177,7 @@ class App:
                                       outputs=[tb_indicator, files_subtitles])
                         tb_youtubelink.change(get_ytmetas, inputs=[tb_youtubelink],
                                               outputs=[img_thumbnail, tb_title, tb_description])
-                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=None)
+                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=tb_indicator)
 
                     with gr.TabItem(_("Mic")):  # tab3
                         with gr.Row():
@@ -192,7 +198,7 @@ class App:
                         btn_run.click(fn=self.whisper_inf.transcribe_mic,
                                       inputs=params + pipeline_params,
                                       outputs=[tb_indicator, files_subtitles])
-                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=None)
+                        btn_openfolder.click(fn=lambda: self.open_folder("outputs"), inputs=None, outputs=tb_indicator)
 
                     with gr.TabItem(_("T2T Translation")):  # tab 4
                         with gr.Row():
@@ -231,7 +237,7 @@ class App:
                         btn_openfolder.click(
                             fn=lambda: self.open_folder(os.path.join(self.args.output_dir, "translations")),
                             inputs=None,
-                            outputs=None)
+                            outputs=tb_indicator)
 
                         with gr.TabItem(_("NLLB")):  # sub tab2
                             with gr.Row():
@@ -267,7 +273,7 @@ class App:
                         btn_openfolder.click(
                             fn=lambda: self.open_folder(os.path.join(self.args.output_dir, "translations")),
                             inputs=None,
-                            outputs=None)
+                            outputs=tb_indicator)
 
                     with gr.TabItem(_("BGM Separation")):
                         files_audio = gr.Files(type="filepath", label=_("Upload Audio Files to separate background music"))
@@ -303,6 +309,14 @@ class App:
                                                          self.args.output_dir, "UVR", "vocals"
                                                      )))
 
+                    # ========== CUSTOM TAB: Swear Removal ==========
+                    # Isolated in modules/ui/swear_removal_tab.py for easy maintenance
+                    with gr.TabItem(_("Remove Swears")):
+                        swear_removal_tab = SwearRemovalTab(self)
+                        swear_removal_tab.render()
+                        swear_removal_tab.register_events()
+                    # ========== END CUSTOM TAB ==========
+
         # Launch the app with optional gradio settings
         args = self.args
         self.app.queue(
@@ -321,13 +335,12 @@ class App:
             allowed_paths=eval(args.allowed_paths) if args.allowed_paths else None
         )
 
+    
     @staticmethod
     def open_folder(folder_path: str):
-        if os.path.exists(folder_path):
-            os.system(f"start {folder_path}")
-        else:
-            os.makedirs(folder_path, exist_ok=True)
-            logger.info(f"The directory path {folder_path} has newly created.")
+        """Open folder using platform helper."""
+        from modules.utils.platform_utils import PlatformHelper
+        return PlatformHelper.open_folder(folder_path)
 
 
 parser = argparse.ArgumentParser()

@@ -16,6 +16,10 @@ TRANSLATION_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "translations")
 UVR_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "UVR")
 UVR_INSTRUMENTAL_OUTPUT_DIR = os.path.join(UVR_OUTPUT_DIR, "instrumental")
 UVR_VOCALS_OUTPUT_DIR = os.path.join(UVR_OUTPUT_DIR, "vocals")
+SWEAR_REMOVAL_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "swear_removal")
+SWEAR_REMOVAL_AUDIO_OUTPUT_DIR = os.path.join(SWEAR_REMOVAL_OUTPUT_DIR, "audio")
+SWEAR_REMOVAL_TRANSCRIPT_OUTPUT_DIR = os.path.join(SWEAR_REMOVAL_OUTPUT_DIR, "transcripts")
+SWEAR_REMOVAL_STATISTICS_OUTPUT_DIR = os.path.join(SWEAR_REMOVAL_OUTPUT_DIR, "statistics")
 BACKEND_DIR_PATH = os.path.join(WEBUI_DIR, "backend")
 SERVER_CONFIG_PATH = os.path.join(BACKEND_DIR_PATH, "configs", "config.yaml")
 SERVER_DOTENV_PATH = os.path.join(BACKEND_DIR_PATH, "configs", ".env")
@@ -33,5 +37,8 @@ for dir_path in [MODELS_DIR,
                  TRANSLATION_OUTPUT_DIR,
                  UVR_INSTRUMENTAL_OUTPUT_DIR,
                  UVR_VOCALS_OUTPUT_DIR,
+                 SWEAR_REMOVAL_AUDIO_OUTPUT_DIR,
+                 SWEAR_REMOVAL_TRANSCRIPT_OUTPUT_DIR,
+                 SWEAR_REMOVAL_STATISTICS_OUTPUT_DIR,
                  BACKEND_CACHE_DIR]:
     os.makedirs(dir_path, exist_ok=True)

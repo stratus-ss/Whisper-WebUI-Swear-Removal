@@ -23,3 +23,13 @@ cache:
   # Clean up frequency in seconds, defaults to 1 minutes
   frequency: 60
 
+swear_removal:
+  # Use monkeyplug's default swear list
+  default_swear_list: "default"
+  # Cache TTL for cleaned audio files in seconds (1 hour)
+  cache_ttl: 3600
+  # Maximum file size in MB
+  max_file_size_mb: 800
+  # Supported audio/video formats
+  supported_formats: ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "mp4", "avi", "mkv", "m4b"]
+

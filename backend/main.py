@@ -4,7 +4,6 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import time
 import threading
 
@@ -13,6 +12,7 @@ from backend.routers.transcription.router import transcription_router, get_pipel
 from backend.routers.vad.router import get_vad_model, vad_router
 from backend.routers.bgm_separation.router import get_bgm_separation_inferencer, bgm_separation_router
 from backend.routers.task.router import task_router
+from backend.routers.swear_removal.router import swear_removal_router, get_swear_manager
 from backend.common.config_loader import read_env, load_server_config
 from backend.common.cache_manager import cleanup_old_files
 from modules.utils.paths import SERVER_CONFIG_PATH, BACKEND_CACHE_DIR
@@ -42,6 +42,7 @@ async def lifespan(app: FastAPI):
     transcription_pipeline = get_pipeline()
     vad_inferencer = get_vad_model()
     bgm_separation_inferencer = get_bgm_separation_inferencer()
+    swear_manager = get_swear_manager()
 
     # Thread initialization
     cache_thread = clean_cache_thread(server_config["cache"]["ttl"], server_config["cache"]["frequency"])
@@ -80,6 +81,7 @@ app.add_middleware(
 app.include_router(transcription_router)
 app.include_router(vad_router)
 app.include_router(bgm_separation_router)
+app.include_router(swear_removal_router)
 app.include_router(task_router)
 
 

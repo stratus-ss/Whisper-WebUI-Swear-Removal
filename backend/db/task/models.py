@@ -33,6 +33,7 @@ class TaskType(str, Enum):
     TRANSCRIPTION = "transcription"
     VAD = "vad"
     BGM_SEPARATION = "bgm_separation"
+    SWEAR_REMOVAL = "swear_removal"
 
     def __str__(self):
         return self.value
