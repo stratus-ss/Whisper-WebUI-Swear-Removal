@@ -260,13 +260,13 @@ class WhisperParams(BaseParams):
     model_size: str = Field(default="large-v2", description="Whisper model size")
     lang: Optional[str] = Field(default=None, description="Source language of the file to transcribe")
     is_translate: bool = Field(default=False, description="Translate speech to English end-to-end")
-    beam_size: int = Field(default=5, ge=1, description="Beam size for decoding")
+    beam_size: int = Field(default=8, ge=1, description="Beam size for decoding")
     log_prob_threshold: float = Field(
         default=-1.0,
         description="Threshold for average log probability of sampled tokens"
     )
     no_speech_threshold: float = Field(
-        default=0.6,
+        default=0.45,
         ge=0.0,
         le=1.0,
         description="Threshold for detecting silence"
@@ -275,7 +275,7 @@ class WhisperParams(BaseParams):
     best_of: int = Field(default=5, ge=1, description="Number of candidates when sampling")
     patience: float = Field(default=1.0, gt=0, description="Beam search patience factor")
     condition_on_previous_text: bool = Field(
-        default=True,
+        default=False,
         description="Use previous output as prompt for next window"
     )
     prompt_reset_on_temperature: float = Field(
@@ -297,7 +297,7 @@ class WhisperParams(BaseParams):
     )
     length_penalty: float = Field(default=1.0, gt=0, description="Exponential length penalty")
     repetition_penalty: float = Field(default=1.0, gt=0, description="Penalty for repeated tokens")
-    no_repeat_ngram_size: int = Field(default=0, ge=0, description="Size of n-grams to prevent repetition")
+    no_repeat_ngram_size: int = Field(default=3, ge=0, description="Size of n-grams to prevent repetition")
     prefix: Optional[str] = Field(default=None, description="Prefix text for first window")
     suppress_blank: bool = Field(
         default=True,
@@ -321,7 +321,7 @@ class WhisperParams(BaseParams):
     max_new_tokens: Optional[int] = Field(default=None, description="Maximum number of new tokens per chunk")
     chunk_length: Optional[int] = Field(default=30, description="Length of audio segments in seconds")
     hallucination_silence_threshold: Optional[float] = Field(
-        default=None,
+        default=2.0,
         description="Threshold for skipping silent periods in hallucination detection"
     )
     hotwords: Optional[str] = Field(default=None, description="Hotwords/hint phrases for the model")
@@ -338,6 +338,16 @@ class WhisperParams(BaseParams):
     enable_offload: bool = Field(
         default=True,
         description="Offload Whisper model after transcription"
+    )
+    merge_max_words: int = Field(
+        default=12,
+        ge=0,
+        description="Max words per merged subtitle block. 0 disables merging."
+    )
+    merge_max_gap: float = Field(
+        default=1.5,
+        ge=0.0,
+        description="Max gap in seconds between segments to allow merging."
     )
 
     @field_validator('lang')
@@ -573,6 +583,23 @@ class WhisperParams(BaseParams):
                 value=defaults.get("enable_offload", cls.__fields__["enable_offload"].default),
             )
         ]
+
+        with gr.Group():
+            merge_inputs = [
+                gr.Slider(
+                    minimum=0, maximum=30, step=1,
+                    label=_("Merge: Max Words Per Block"),
+                    value=defaults.get("merge_max_words", cls.__fields__["merge_max_words"].default),
+                    info=_("Merged subtitle blocks will not exceed this many words. Set to 0 to disable.")
+                ),
+                gr.Slider(
+                    minimum=0.0, maximum=5.0, step=0.1,
+                    label=_("Merge: Max Gap (sec)"),
+                    value=defaults.get("merge_max_gap", cls.__fields__["merge_max_gap"].default),
+                    info=_("Only merge consecutive segments closer than this gap in seconds.")
+                ),
+            ]
+        inputs += merge_inputs
 
         return inputs
 

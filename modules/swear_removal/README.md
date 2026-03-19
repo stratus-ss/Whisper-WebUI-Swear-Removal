@@ -1,6 +1,6 @@
 # Swear Removal Module
 
-This module provides profanity censoring for audio and video files, integrated with Whisper-WebUI.
+This module provides profanity censoring for audio and video files, integrated with Whisper-WebUI-Swear-Removal.
 
 ## Features
 
@@ -238,7 +238,7 @@ All tests validate:
 Our transcript format is **fully compatible** with monkeyplug CLI:
 
 ```bash
-# Process with Whisper-WebUI, get transcript
+# Process with Whisper-WebUI-Swear-Removal, get transcript
 # Then use with monkeyplug CLI:
 monkeyplug.py --input-transcript audiobook_transcript.json \
               -i audiobook.mp3 \

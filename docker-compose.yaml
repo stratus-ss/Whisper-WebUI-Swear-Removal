@@ -1,10 +1,7 @@
 services:
   whisper-webui:
     container_name: whisper-webui
-    image: quay.io/sovens/transcription/whisper-webui:swear0.2
-    
-    # Run as current user to prevent permission issues
-    user: "${UID:-1000}:${GID:-1000}"
+    image: quay.io/sovens/transcription/whisper-webui:swear0.3
 
     volumes:
       # Mount container's volume paths to local machine directories

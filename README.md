@@ -1,21 +1,31 @@
 # Whisper-WebUI-Swear-Removal
 
-> **🍴 This is a specialized fork of [jhj0517/Whisper-WebUI](https://github.com/jhj0517/Whisper-WebUI)**
+> **Fork of [jhj0517/Whisper-WebUI](https://github.com/jhj0517/Whisper-WebUI)** with swear removal, subtitle merging, and Docker fixes
 
-## 🎯 Why This Fork Exists
+## Why This Fork Exists
 
-This fork was created specifically for **audiobook content filtering** - enabling parents, educators, and content creators to automatically remove profanity from audiobooks and spoken content. While the original Whisper-WebUI excels at transcription and translation, this fork adds intelligent **swear word detection and censoring capabilities** that weren't available in the upstream project.
+This fork extends Whisper-WebUI with **profanity filtering** for audiobooks/spoken content and **subtitle quality improvements**. It adds swear word detection and censoring, intelligent subtitle segment merging, and Docker fixes not present upstream.
 
-### 🔑 Key Additions to Original Whisper-WebUI:
-- **🤐 Swear Removal Tab**: Dedicated interface for profanity filtering
-- **🎵 Audio Censoring**: Mute or beep over detected profanity 
-- **📚 M4B Audiobook Support**: Specialized handling for audiobook formats
-- **⚡ Transcript Caching**: Skip re-transcription for 10x-50x faster reprocessing
-- **📊 Statistics & Reporting**: Detailed censorship analytics
-- **🎯 Word-Level Precision**: Exact timestamp-based filtering
-- **📝 Custom Swear Lists**: Upload your own profanity lists or edit in-browser
+### Key Additions to Original Whisper-WebUI:
 
-### 🙏 Attribution
+**Swear Removal**
+- Dedicated tab for profanity filtering with mute or beep censoring
+- Word-level timestamp precision with custom swear lists
+- M4B audiobook format support
+- SHA256-based transcript caching (10x-50x faster reprocessing)
+- Censorship statistics and reporting
+
+**Subtitle Quality**
+- Intelligent segment merging — combines Whisper's over-segmented 1-3 word blocks into readable subtitles
+- Respects punctuation boundaries and multilingual markers
+- Tuned default parameters: reduced hallucination, better beam search, VAD enabled by default
+
+**Docker**
+- Fixed UVR (vocal remover) installation — upstream `setup.py` is broken, workaround applied
+- Non-root container user with proper cache/config directory permissions
+- Python 3.11-slim base image with CUDA 12.8 support
+
+### Attribution
 **Original Project**: [Whisper-WebUI](https://github.com/jhj0517/Whisper-WebUI) by [jhj0517](https://github.com/jhj0517)  
 **License**: Maintains original project's licensing  
 **All Core Features**: Full compatibility with upstream Whisper-WebUI functionality
@@ -160,30 +170,11 @@ Any PRs that translate the language into [translation.yaml](https://github.com/s
 
 ---
 
-## 🤝 Attribution & Upstream Relationship
+## Attribution & Upstream
 
-### Original Project
-This fork is based on **[Whisper-WebUI](https://github.com/jhj0517/Whisper-WebUI)** by **[jhj0517](https://github.com/jhj0517)**.
+This fork is based on **[Whisper-WebUI](https://github.com/jhj0517/Whisper-WebUI)** by **[jhj0517](https://github.com/jhj0517)**. All credit for core transcription, Gradio UI, translation, diarization, and REST API goes to the original project. Fork contributions (swear removal, segment merging, Docker fixes) by **[stratus-ss](https://github.com/stratus-ss)**.
 
-**🎉 All credit for the core transcription functionality** goes to the original project and its contributors. This includes:
-- The entire Whisper integration architecture
-- Gradio interface design and implementation  
-- Docker configuration and deployment
-- Multi-language support and translation features
-- Speaker diarization and VAD preprocessing
-- REST API implementation
+For maintenance details and upstream merge instructions, see [FORK_MAINTENANCE.md](FORK_MAINTENANCE.md).
 
-### This Fork's Contributions
-**Swear removal functionality** developed by **[stratus-ss](https://github.com/stratus-ss)** specifically for audiobook content filtering use cases.
-
-### Staying Updated
-This fork maintains compatibility with upstream changes. For the latest general Whisper-WebUI features, updates, and documentation, please refer to the **[original repository](https://github.com/jhj0517/Whisper-WebUI)**.
-
-### Support the Original Developer
-If you find this project useful, please consider supporting the original author:
-- ⭐ **Star** the [original repository](https://github.com/jhj0517/Whisper-WebUI)
-- ❤️ **Sponsor** [jhj0517](https://github.com/sponsors/jhj0517)
-
-### Issues and Contributions
-- **General Whisper/Transcription Issues**: Please report to the [original repository](https://github.com/jhj0517/Whisper-WebUI/issues)
-- **Swear Removal Feature Issues**: Report to [this fork's issues](https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal/issues)
+**Issues**: [General/transcription](https://github.com/jhj0517/Whisper-WebUI/issues) | [Swear removal/fork-specific](https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal/issues)  
+**Support the original developer**: [Star](https://github.com/jhj0517/Whisper-WebUI) or [Sponsor](https://github.com/sponsors/jhj0517) jhj0517

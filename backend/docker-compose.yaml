@@ -1,21 +1,22 @@
 services:
   app:
-    build:
-      dockerfile: backend/Dockerfile
-      context: ..
-    image: jhj0517/whisper-webui-backend:latest
+#    build:
+#      dockerfile: backend/Dockerfile
+#      context: ..
+#    image: jhj0517/whisper-webui-backend:latest
+    image: jhj0517/whisper-webui-backend@sha256:76fc63a577570f151297c4ec1650165be40835acfb30ee1e78292baa8ddb182b
 
     volumes:
       # You can mount the container's volume paths to directory paths on your local machine.
       # Models will be stored in the `./models' directory on your machine.
       # Similarly, all output files will be stored in the `./outputs` directory.
-      # The DB file is saved in /Whisper-WebUI/backend/records.db unless you edit it in /Whisper-WebUI/backend/configs/.env
-      - ./models:/Whisper-WebUI/models
-      - ./outputs:/Whisper-WebUI/outputs
-      - ./backend:/Whisper-WebUI/backend
+      # The DB file is saved in /Whisper-WebUI-Swear-Removal/backend/records.db unless you edit it in /Whisper-WebUI-Swear-Removal/backend/configs/.env
+      - ./models:/Whisper-WebUI-Swear-Removal/models
+      - ./outputs:/Whisper-WebUI-Swear-Removal/outputs
+      - ./backend:/Whisper-WebUI-Swear-Removal/backend
 
     ports:
-      - "8000:8000"
+      - "8001:8000"
 
     stdin_open: true
     tty: true

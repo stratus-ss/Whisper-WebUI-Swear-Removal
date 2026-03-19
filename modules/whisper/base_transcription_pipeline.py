@@ -24,6 +24,7 @@ from modules.utils.audio_manager import validate_audio
 from modules.whisper.data_classes import *
 from modules.diarize.diarizer import Diarizer
 from modules.vad.silero_vad import SileroVAD
+from modules.whisper.segment_merger import SegmentMerger
 
 
 logger = get_logger()
@@ -208,6 +209,13 @@ class BaseTranscriptionPipeline(ABC):
         if not result:
             logger.info(f"Whisper did not detected any speech segments in the audio.")
             result = [Segment()]
+
+        if whisper_params.merge_max_words > 0:
+            result = SegmentMerger.merge_segments(
+                result,
+                max_words=whisper_params.merge_max_words,
+                max_gap_sec=whisper_params.merge_max_gap
+            )
 
         progress(1.0, desc="Finished.")
         total_elapsed_time = time.time() - start_time

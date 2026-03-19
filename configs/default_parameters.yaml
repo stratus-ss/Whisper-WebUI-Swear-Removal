@@ -2,9 +2,9 @@ whisper:
   model_size: large-v2
   lang: spanish
   is_translate: false
-  beam_size: 5
+  beam_size: 8
   log_prob_threshold: -1.0
-  no_speech_threshold: 0.45
+  no_speech_threshold: 0.5
   compute_type: float16
   best_of: 5
   patience: 1.0
@@ -14,8 +14,8 @@ whisper:
   temperature: 0.0
   compression_ratio_threshold: 2.4
   length_penalty: 1.0
-  repetition_penalty: 3.0
-  no_repeat_ngram_size: 3
+  repetition_penalty: 1.5
+  no_repeat_ngram_size: 2
   prefix: null
   suppress_blank: true
   suppress_tokens: '[-1]'
@@ -25,12 +25,14 @@ whisper:
   append_punctuations: '"''.。,，!！?？:：”)]}、'
   max_new_tokens: null
   chunk_length: 30
-  hallucination_silence_threshold: 2.0
+  hallucination_silence_threshold: 5.0
   hotwords: null
   language_detection_threshold: 0.5
   language_detection_segments: 1
   batch_size: 24
   enable_offload: true
+  merge_max_words: 12
+  merge_max_gap: 1.5
   add_timestamp: false
   file_format: SRT
 vad:
@@ -46,7 +48,7 @@ diarization:
   hf_token: ''
   enable_offload: true
 bgm_separation:
-  is_separate_bgm: false
+  is_separate_bgm: true
   uvr_model_size: UVR-MDX-NET-Inst_HQ_4
   uvr_device: cuda
   segment_size: 256
