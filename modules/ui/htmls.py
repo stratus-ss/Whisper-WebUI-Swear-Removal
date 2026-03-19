@@ -38,7 +38,7 @@ CSS = """
 """
 
 MARKDOWN = """
-### [Whisper-WebUI](https://github.com/jhj0517/Whsiper-WebUI)
+### [Whisper-WebUI-Swear-Removal](https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal)
 """
 
 

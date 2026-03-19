@@ -57,9 +57,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Whisper-WebUI-Backend",
+    title="Whisper-WebUI-Swear-Removal-Backend",
     description=f"""
-    REST API for Whisper-WebUI. Swagger UI is available via /docs or root URL with redirection. Redoc is available via /redoc. 
+    REST API for Whisper-WebUI-Swear-Removal. Swagger UI is available via /docs or root URL with redirection. Redoc is available via /redoc. 
     """,
     version="0.0.1",
     lifespan=lifespan,

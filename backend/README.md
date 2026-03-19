@@ -1,10 +1,10 @@
-# Whisper-WebUI REST API
-REST API for Whisper-WebUI. Documentation is auto-generated upon deploying the app.
+# Whisper-WebUI-Swear-Removal REST API
+REST API for Whisper-WebUI-Swear-Removal. Documentation is auto-generated upon deploying the app.
 <br>[Swagger UI](https://github.com/swagger-api/swagger-ui) is available at `app/docs` or root URL with redirection. [Redoc](https://github.com/Redocly/redoc) is available at `app/redoc`.
 
 # Setup and Installation
 
-Installation assumes that you are in the root directory of Whisper-WebUI
+Installation assumes that you are in the root directory of Whisper-WebUI-Swear-Removal
 
 1. Create `.env` in `backend/configs/.env`
 ```
@@ -38,10 +38,10 @@ https://github.com/jhj0517/Whisper-WebUI/blob/895cafe400944396ad8be5b1cc793b54fe
 4. Open a terminal and go to the location of [`nginx.conf`](https://github.com/jhj0517/Whisper-WebUI/blob/master/backend/nginx/nginx.conf), then start the nginx server, so that you can manage nginx-related logs there.
 ```shell
 cd backend/nginx
-nginx -c "/path/to/Whisper-WebUI/backend/nginx/nginx.conf"
+nginx -c "/path/to/Whisper-WebUI-Swear-Removal/backend/nginx/nginx.conf"
 ```
 
-5. Open another terminal in the root project location `/Whisper-WebUI`, and deploy the app with `uvicorn` or whatever. Now the app will be available at your domain.
+5. Open another terminal in the root project location `/Whisper-WebUI-Swear-Removal`, and deploy the app with `uvicorn` or whatever. Now the app will be available at your domain.
 ```shell
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
@@ -49,7 +49,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000
 6. When you turn off nginx, you can use `nginx -s stop`.
 ```shell
 cd backend/nginx
-nginx -s stop -c "/path/to/Whisper-WebUI/backend/nginx/nginx.conf"
+nginx -s stop -c "/path/to/Whisper-WebUI-Swear-Removal/backend/nginx/nginx.conf"
 ```
 
 
@@ -60,11 +60,11 @@ You can set some server configurations in [config.yaml](https://github.com/jhj05
 
 ## Docker
 You can also deploy the server with Docker for easy deployment.
-The Dockerfile should be built when you're in the root directory of Whisper-WebUI.
+The Dockerfile should be built when you're in the root directory of Whisper-WebUI-Swear-Removal.
 
 1. git clone this repository
 ```
-git clone https://github.com/jhj0517/Whisper-WebUI.git
+git clone https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal.git
 ```
 2. Mount volume paths with your local paths in `docker-compose.yaml`
 https://github.com/jhj0517/Whisper-WebUI/blob/1dd708ec3844dbf0c1f77de9ef5764e883dd4c78/backend/docker-compose.yaml#L12-L15

@@ -2,7 +2,7 @@
 Audio Cleaner for removing profanity from audio files.
 
 This module wraps monkeyplug's core FFmpeg-based audio cleaning functionality
-and integrates it with Whisper-WebUI's architecture.
+and integrates it with Whisper-WebUI-Swear-Removal's architecture.
 """
 
 import os

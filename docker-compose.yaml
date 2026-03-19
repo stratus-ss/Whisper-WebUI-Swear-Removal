@@ -2,15 +2,18 @@ services:
   whisper-webui:
     container_name: whisper-webui
     image: quay.io/sovens/transcription/whisper-webui:swear0.2
+    
+    # Run as current user to prevent permission issues
+    user: "${UID:-1000}:${GID:-1000}"
 
     volumes:
       # Mount container's volume paths to local machine directories
       # Models will be stored in the './models' directory
       # Output files will be stored in the './outputs' directory
       # Configuration files in './configs' directory
-      - ./models:/Whisper-WebUI/models
-      - ./outputs:/Whisper-WebUI/outputs
-      - ./configs:/Whisper-WebUI/configs
+      - ./models:/Whisper-WebUI-Swear-Removal/models
+      - ./outputs:/Whisper-WebUI-Swear-Removal/outputs
+      - ./configs:/Whisper-WebUI-Swear-Removal/configs
 
     ports:
       - "7860:7860"
