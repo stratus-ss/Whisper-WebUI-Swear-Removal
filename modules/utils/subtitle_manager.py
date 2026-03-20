@@ -151,14 +151,21 @@ class SubtitlesWriter(ResultWriter):
             subtitle: List[dict] = []
             last: float = get_start(result["segments"]) or 0.0
             for segment in result["segments"]:
+                seg_words = segment.get("words") or []
+                if not seg_words and segment.get("text"):
+                    seg_words = [{
+                        "word": segment["text"],
+                        "start": segment.get("start", 0.0),
+                        "end": segment.get("end", 0.0),
+                    }]
                 chunk_index = 0
                 words_count = max_words_per_line
-                while chunk_index < len(segment["words"]):
-                    remaining_words = len(segment["words"]) - chunk_index
-                    if max_words_per_line > len(segment["words"]) - chunk_index:
+                while chunk_index < len(seg_words):
+                    remaining_words = len(seg_words) - chunk_index
+                    if max_words_per_line > len(seg_words) - chunk_index:
                         words_count = remaining_words
                     for i, original_timing in enumerate(
-                        segment["words"][chunk_index : chunk_index + words_count]
+                        seg_words[chunk_index : chunk_index + words_count]
                     ):
                         timing = original_timing.copy()
                         long_pause = (

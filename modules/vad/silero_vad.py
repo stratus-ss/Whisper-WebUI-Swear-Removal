@@ -9,7 +9,10 @@ import faster_whisper
 from faster_whisper.transcribe import SpeechTimestampsMap
 import gradio as gr
 
+from modules.utils.logger import get_logger
 from modules.whisper.data_classes import *
+
+logger = get_logger()
 
 
 class SileroVAD:
@@ -63,6 +66,12 @@ class SileroVAD:
 
         audio = self.collect_chunks(audio, speech_chunks)
         duration_after_vad = audio.shape[0] / sampling_rate
+
+        removed_pct = (1 - duration_after_vad / duration) * 100 if duration > 0 else 0
+        logger.info(
+            "[VAD] %d speech chunks detected | audio %.1fs -> %.1fs (%.1f%% removed)",
+            len(speech_chunks), duration, duration_after_vad, removed_pct,
+        )
 
         return audio, speech_chunks
 

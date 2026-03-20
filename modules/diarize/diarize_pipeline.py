@@ -1,5 +1,6 @@
 # Adapted from https://github.com/m-bain/whisperX/blob/main/whisperx/diarize.py
 
+import functools
 import numpy as np
 import pandas as pd
 import os
@@ -12,6 +13,22 @@ from modules.utils.paths import DIARIZATION_MODELS_DIR
 from modules.diarize.audio_loader import load_audio, SAMPLE_RATE
 
 
+def _patch_torch_load_for_pyannote():
+    """Temporarily force weights_only=False for pyannote model loading.
+
+    PyTorch 2.6+ defaults weights_only=True which rejects pyannote
+    checkpoint globals (TorchVersion, Specifications, etc.).
+    """
+    _original = torch.load
+
+    @functools.wraps(_original)
+    def _patched(*args, **kwargs):
+        kwargs["weights_only"] = False
+        return _original(*args, **kwargs)
+
+    return _patched, _original
+
+
 class DiarizationPipeline:
     def __init__(
         self,
@@ -22,11 +39,26 @@ class DiarizationPipeline:
     ):
         if isinstance(device, str):
             device = torch.device(device)
-        self.model = Pipeline.from_pretrained(
-            model_name,
-            use_auth_token=use_auth_token,
-            cache_dir=cache_dir
-        ).to(device)
+
+        patched, original = _patch_torch_load_for_pyannote()
+        torch.load = patched
+        try:
+            model = Pipeline.from_pretrained(
+                model_name,
+                use_auth_token=use_auth_token,
+                cache_dir=cache_dir
+            )
+        finally:
+            torch.load = original
+
+        if model is None:
+            raise RuntimeError(
+                f"Failed to load diarization pipeline '{model_name}'. "
+                "Ensure your HF_TOKEN is set and you have accepted the model terms at "
+                "https://hf.co/pyannote/speaker-diarization-3.1 and "
+                "https://hf.co/pyannote/segmentation-3.0"
+            )
+        self.model = model.to(device)
 
     def __call__(self, audio: Union[str, np.ndarray], min_speakers=None, max_speakers=None):
         if isinstance(audio, str):

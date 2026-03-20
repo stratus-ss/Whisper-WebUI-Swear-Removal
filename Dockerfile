@@ -37,8 +37,8 @@ RUN useradd -m -u 1000 appuser && \
 
 WORKDIR /Whisper-WebUI-Swear-Removal
 
-COPY --chown=appuser:appuser . .
 COPY --from=builder --chown=appuser:appuser /Whisper-WebUI-Swear-Removal/venv /Whisper-WebUI-Swear-Removal/venv
+COPY --chown=appuser:appuser . .
 
 # Create volume directories
 RUN mkdir -p /Whisper-WebUI-Swear-Removal/models /Whisper-WebUI-Swear-Removal/outputs

@@ -1,7 +1,7 @@
 services:
   whisper-webui:
     container_name: whisper-webui
-    image: quay.io/sovens/transcription/whisper-webui:swear0.3
+    image: quay.io/sovens/transcription/whisper-webui:swear0.3.5
 
     volumes:
       # Mount container's volume paths to local machine directories
@@ -26,3 +26,4 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute
+      - HF_TOKEN=${HF_TOKEN:-}

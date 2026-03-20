@@ -71,6 +71,8 @@ class SegmentMerger:
             ):
                 current.text = f"{cur_text} {nxt_text}"
                 current.end = next_seg.end
+                if current.words is not None and next_seg.words is not None:
+                    current.words = list(current.words) + list(next_seg.words)
             else:
                 merged.append(current)
                 current = next_seg.model_copy()

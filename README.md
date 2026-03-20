@@ -89,19 +89,28 @@ The original app is able to run with [Pinokio](https://github.com/pinokiocompute
 git clone https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal.git
 ```
 
-3. Build the image ( Image is about 7GB~ )
+3. **(Optional) Configure speaker diarization**
+
+   Copy the example env file and add your Hugging Face token:
+   ```sh
+   cp .env.example .env
+   # Edit .env and set HF_TOKEN=hf_your_token_here
+   ```
+   You must also accept the model terms at [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1) and [pyannote/segmentation-3.0](https://huggingface.co/pyannote/segmentation-3.0).
+
+4. Build the image ( Image is about 7GB~ )
 
 ```sh
 docker compose build 
 ```
 
-4. Run the container 
+5. Run the container 
 
 ```sh
 docker compose up
 ```
 
-5. Connect to the WebUI with your browser at `http://localhost:7860`
+6. Connect to the WebUI with your browser at `http://localhost:7860`
 
 If needed, update the [`docker-compose.yaml`](https://github.com/stratus-ss/Whisper-WebUI-Swear-Removal/blob/master/docker-compose.yaml) to match your environment.
 

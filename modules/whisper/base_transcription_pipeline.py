@@ -30,6 +30,12 @@ from modules.whisper.segment_merger import SegmentMerger
 logger = get_logger()
 
 
+def _log_pipeline_stage(stage: str, segments: List[Segment]) -> None:
+    seg_count = len(segments)
+    word_count = sum(len((s.text or "").split()) for s in segments)
+    logger.info("[Pipeline] %s: %d segments, ~%d words", stage, seg_count, word_count)
+
+
 class BaseTranscriptionPipeline(ABC):
     def __init__(self,
                  model_dir: str = WHISPER_MODELS_DIR,
@@ -176,6 +182,7 @@ class BaseTranscriptionPipeline(ABC):
             progress_callback,
             *whisper_params.to_list()
         )
+        _log_pipeline_stage("after transcription", result)
         if whisper_params.enable_offload:
             self.offload()
 
@@ -188,6 +195,7 @@ class BaseTranscriptionPipeline(ABC):
                 result = restored_result
             else:
                 logger.info("VAD detected no speech segments in the audio.")
+            _log_pipeline_stage("after VAD timestamp restore", result)
 
         if diarization_params.is_diarize:
             progress(0.99, desc="Diarizing speakers..")
@@ -197,6 +205,7 @@ class BaseTranscriptionPipeline(ABC):
                 transcribed_result=result,
                 device=diarization_params.diarization_device
             )
+            _log_pipeline_stage("after diarization", result)
             if diarization_params.enable_offload:
                 self.diarizer.offload()
 
@@ -211,11 +220,13 @@ class BaseTranscriptionPipeline(ABC):
             result = [Segment()]
 
         if whisper_params.merge_max_words > 0:
+            _log_pipeline_stage("before merge", result)
             result = SegmentMerger.merge_segments(
                 result,
                 max_words=whisper_params.merge_max_words,
                 max_gap_sec=whisper_params.merge_max_gap
             )
+            _log_pipeline_stage("after merge", result)
 
         progress(1.0, desc="Finished.")
         total_elapsed_time = time.time() - start_time
