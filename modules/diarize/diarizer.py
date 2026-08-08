@@ -73,13 +73,14 @@ class Diarizer:
         segments_result = []
         for segment in diarized_result["segments"]:
             speaker = "None"
-            if "speaker" in segment:
+            if "speaker" in segment and segment["speaker"] is not None:
                 speaker = segment["speaker"]
             diarized_text = speaker + "|" + segment["text"].strip()
             segments_result.append(Segment(
                 start=segment["start"],
                 end=segment["end"],
-                text=diarized_text
+                text=diarized_text,
+                speaker=None if speaker == "None" else speaker
             ))
 
         elapsed_time = time.time() - start_time

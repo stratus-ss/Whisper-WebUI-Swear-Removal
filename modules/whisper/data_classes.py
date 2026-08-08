@@ -22,6 +22,7 @@ class Segment(BaseModel):
     id: Optional[int] = Field(default=None, description="Incremental id for the segment")
     seek: Optional[int] = Field(default=None, description="Seek of the segment from chunked audio")
     text: Optional[str] = Field(default=None, description="Transcription text of the segment")
+    speaker: Optional[str] = Field(default=None, description="Speaker label from diarization (e.g. SPEAKER_00)")
     start: Optional[float] = Field(default=None, description="Start time of the segment")
     end: Optional[float] = Field(default=None, description="End time of the segment")
     tokens: Optional[List[int]] = Field(default=None, description="List of token IDs")

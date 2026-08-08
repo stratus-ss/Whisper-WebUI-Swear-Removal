@@ -6,6 +6,7 @@ from modules.whisper.data_classes import Segment
 
 SENTENCE_TERMINALS = re.compile(r'[.!?…]\s*$')
 INVERTED_PUNCT = re.compile(r'^[¡¿]')
+SPEAKER_PREFIX_RE = re.compile(r'^(?:SPEAKER_\d+|None)\|')
 
 
 class SegmentMerger:
@@ -20,7 +21,10 @@ class SegmentMerger:
     @staticmethod
     def _should_merge(current_text: str, next_text: str,
                       gap: float, combined_words: int,
-                      max_words: int, max_gap_sec: float) -> bool:
+                      max_words: int, max_gap_sec: float,
+                      current_speaker=None, next_speaker=None) -> bool:
+        if current_speaker != next_speaker:
+            return False
         if combined_words > max_words:
             return False
         if gap > max_gap_sec:
@@ -67,9 +71,10 @@ class SegmentMerger:
 
             if SegmentMerger._should_merge(
                 cur_text, nxt_text, gap, combined_words,
-                max_words, max_gap_sec
+                max_words, max_gap_sec,
+                current.speaker, next_seg.speaker
             ):
-                current.text = f"{cur_text} {nxt_text}"
+                current.text = f"{cur_text} {SPEAKER_PREFIX_RE.sub('', nxt_text, count=1).strip()}"
                 current.end = next_seg.end
                 if current.words is not None and next_seg.words is not None:
                     current.words = list(current.words) + list(next_seg.words)

@@ -59,6 +59,60 @@ ssh root@containers-gpu 'stat -c "%y" /AIStuff/Whisper-WebUI/backend/routers/tra
 ssh root@containers-gpu 'for c in backend-app-1 backend-transcription-1; do docker exec $c ps aux | grep uvicorn; done'
 ```
 
+## Segment Merger Speaker Awareness (2026-08-08)
+
+Diarized transcriptions (`is_diarize=True`) were producing mid-line `SPEAKER_XX`
+labels — e.g. `SPEAKER_00|What are you doing? SPEAKER_01|I'm fixing a stat` —
+because `SegmentMerger.merge_segments` (introduced in upstream commit `0efb138`)
+merged consecutive segments without knowing they belonged to different speakers.
+The fix adds structural speaker awareness:
+
+- **`Segment.speaker` field** (`modules/whisper/data_classes.py`): new
+  `Optional[str]` field (default `None`). Backward-compatible — existing
+  construction sites and `model_dump()` calls automatically pick it up.
+- **`Diarizer.run` populates `Segment.speaker`** (`modules/diarize/diarizer.py`):
+  the segments_result loop passes `speaker=None if speaker == "None" else speaker`
+  into the constructor. The legacy `"None"` sentinel string is preserved for the
+  text-prefix concatenation (display compatibility — subtitle writer and WebUI
+  read `segment["text"]`) while the structured field carries the real value.
+- **`SegmentMerger` is speaker-aware** (`modules/whisper/segment_merger.py`):
+  - `_should_merge` gained `current_speaker=None, next_speaker=None` params; the
+    **first** check is `if current_speaker != next_speaker: return False` — a
+    hard boundary that no merge may cross.
+  - On a true merge, the redundant `SPEAKER_XX|` or `None|` prefix is stripped
+    from the appended text via `SPEAKER_PREFIX_RE.sub('', nxt_text, count=1)`.
+- **Diarization-off equivalence:** when both segments have `speaker=None`,
+  `None == None` → True → merge allowed (existing behavior preserved). The 11
+  pre-existing merger tests act as the regression suite for this.
+
+### Local GPU functional test procedure
+
+Run the full local proof on a CUDA-capable host (tested on RTX 5070 Ti, 2026-08-08):
+
+```bash
+# Stage 90s excerpt from a multi-speaker D&D session (replace with any multi-speaker WAV)
+ffmpeg -y -ss 1440 -t 90 -i <source_flac> -ac 1 -ar 16000 tests/dnd_24aug_90s.wav
+
+# Unit tests (16 cases: 11 pre-existing + 5 new speaker-aware cases)
+source venv/bin/activate && python -m pytest tests/test_segment_merger.py -v
+
+# Functional test (requires GPU + pyannote model cached + HF_TOKEN)
+source venv/bin/activate
+set -a && source backend/.env && set +a
+# Pre-existing environment workaround: system cuDNN 9.25 ABI mismatch with PyTorch 2.8's
+# bundled cuDNN 9.10 — force the bundled lib to be loaded first.
+export LD_LIBRARY_PATH=venv/lib/python3.11/site-packages/nvidia/cudnn/lib:${LD_LIBRARY_PATH}
+python -m pytest tests/test_merger_diarization_functional.py -v
+```
+
+The functional test asserts ≥1 speaker-labeled line exists (diarization ran)
+AND zero mid-line `SPEAKER_XX|` labels. On the 24Aug2025 D&D session excerpt:
+33 raw segments → 32 after merge (1 cross-speaker boundary respected),
+31 speaker-prefixed lines, 0 mid-line speaker labels.
+
+The staged `tests/dnd_24aug_90s.wav` is excluded from git via the existing
+`*.wav` rule in `.gitignore` line 1.
+
 ## Adaptation Notes
 
 Plan-vs-reality deviations recorded per the planning protocol (A13):
@@ -70,6 +124,11 @@ Plan-vs-reality deviations recorded per the planning protocol (A13):
 | Test uses default TestClient | `raise_server_exceptions=False` added | Background-task exceptions re-raised by `run_transcription` surface in TestClient only |
 | Happy-path test reads `result[0]` | Concatenates all segment texts before WER | Multi-segment output; `result[0]` undercounts the transcription |
 | Commit 3 files | Commit 4 files (added `test_backend_transcription.py`) | Test patch required to fix WER assertion |
+| Functional test on synthesized 2-speaker clip | Used real D&D session audio excerpt (`24Aug2025.flac`, 0:24:00–0:25:30) | Authentic multi-speaker recording available locally — better realism than synthesis |
+| `.gitignore` needs new line for staged WAV | No `.gitignore` edit needed | Existing `*.wav` rule (line 1) already covers `tests/dnd_24aug_90s.wav` |
+| `_hparams(merge_max_words=N)` forwards to model | Added `merge_max_words=merge_max_words` to `WhisperParams(...)` constructor call | Plan bug — original call dropped the parameter, making merge-on/merge-off comparison a false negative |
+| Commit 7 files | Commit 6 files (3 production + 2 tests + 1 doc) | `.gitignore` excluded since no edit was needed |
+| Code comment on `"None"` sentinel string | Documented here in maintenance doc instead | Repo follows zero-comment convention; ADVISORY #5 from code review |
 
 ## Testing
 
