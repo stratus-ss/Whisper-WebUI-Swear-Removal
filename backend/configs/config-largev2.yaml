@@ -1,0 +1,34 @@
+whisper:
+  # Default implementation is faster-whisper. This indicates model name within `models\Whisper\faster-whisper`
+  model_size: large-v2
+  # Compute type. 'float16' for CUDA, 'float32' for CPU.
+  compute_type: float16
+  # Whether to offload the model after the inference.
+  enable_offload: true
+
+bgm_separation:
+  # UVR model sizes between ["UVR-MDX-NET-Inst_HQ_4", "UVR-MDX-NET-Inst_3"]
+  model_size: UVR-MDX-NET-Inst_HQ_4
+  # Whether to offload the model after the inference. Should be true if your setup has VRAM < 16GB
+  enable_offload: true
+  # Device to load BGM separation model between ["cuda", "cpu", "xpu"]
+  device: cuda
+
+# Settings that apply to the `cache' directory. The output files for `/bgm-separation` are stored in the `cache' directory,
+# (You can check out the actual generated files by testing `/bgm-separation`.)
+# You can adjust the TTL/cleanup frequency of the files in the `cache' directory here.
+cache:
+  # TTL (Time-To-Live) in seconds, defaults to 10 minutes
+  ttl: 600
+  # Clean up frequency in seconds, defaults to 1 minutes
+  frequency: 60
+
+swear_removal:
+  # Use monkeyplug's default swear list
+  default_swear_list: "default"
+  # Cache TTL for cleaned audio files in seconds (1 hour)
+  cache_ttl: 3600
+  # Maximum file size in MB
+  max_file_size_mb: 800
+  # Supported audio/video formats
+  supported_formats: ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "mp4", "avi", "mkv", "m4b"]

@@ -8,3 +8,15 @@ modules/yt_tmp.wav
 **/.idea
 **/.git
 **/.github
+
+# Negations (whitelist) — these patterns re-include paths that the rules above
+# would otherwise exclude. They are REQUIRED for the segment-merger speaker
+# awareness fix (commit da2e2e2) to be baked into the production image:
+#   - modules/whisper/data_classes.py  (Segment.speaker field)
+#   - modules/whisper/segment_merger.py (SPEAKER_PREFIX_RE + speaker-aware merge)
+#   - modules/diarize/diarizer.py      (pydantic-v2 "speaker" in segment fix)
+# Without these, the Dockerfile's `COPY . .` would silently skip the fix and
+# the baked image would be functionally identical to the pre-fix upstream image.
+# See FORK_MAINTENANCE.md "Local Image Rebuild" section for rationale.
+!modules/
+!modules/**

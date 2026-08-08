@@ -1,0 +1,51 @@
+# Local replica of the containers-gpu production topology.
+#
+# Two services:
+#   backend-app  -> host :8001  (small model, default config)
+#   backend-transcription -> host :8002  (large-v2, mounted config-largev2.yaml)
+#
+# Both run the same image tag (swear0.3.7) built in Task 3 with the
+# segment-merger speaker-awareness fix baked in. Bind mounts point at the
+# repo-root paths via `../` because Compose resolves relative paths from the
+# compose file's directory (local-replica/).
+#
+# DO NOT USE IN PRODUCTION. Production compose is docker-compose.yaml at repo root.
+#
+# Run with:
+#   cd /home/stratus/git_projects/Whisper-WebUI
+#   set -a && source backend/.env && set +a
+#   docker compose -f local-replica/docker-compose.local-replica.yaml up -d
+
+services:
+  backend-app:
+    container_name: backend-app-1
+    image: quay.io/sovens/transcription/whisper-webui-backend:swear0.3.7
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute
+      - HF_TOKEN=${HF_TOKEN:?HF_TOKEN must be set in backend/.env}
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../backend:/Whisper-WebUI-Swear-Removal/backend
+      - ../models:/Whisper-WebUI-Swear-Removal/models
+      - ../outputs:/Whisper-WebUI-Swear-Removal/outputs
+    restart: unless-stopped
+
+  backend-transcription:
+    container_name: backend-transcription-1
+    image: quay.io/sovens/transcription/whisper-webui-backend:swear0.3.7
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute
+      - HF_TOKEN=${HF_TOKEN:?HF_TOKEN must be set in backend/.env}
+    ports:
+      - "8002:8000"
+    volumes:
+      - ../backend:/Whisper-WebUI-Swear-Removal/backend
+      - ../models:/Whisper-WebUI-Swear-Removal/models
+      - ../outputs:/Whisper-WebUI-Swear-Removal/outputs
+      - ../backend/configs/config-largev2.yaml:/Whisper-WebUI-Swear-Removal/backend/configs/config.yaml:ro
+    restart: unless-stopped

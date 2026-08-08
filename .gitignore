@@ -11,3 +11,5 @@ outputs/
 models/
 modules/yt_tmp.wav
 configs/default_parameters.yaml
+logs/
+*.log

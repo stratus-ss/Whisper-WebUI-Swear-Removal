@@ -113,6 +113,116 @@ AND zero mid-line `SPEAKER_XX|` labels. On the 24Aug2025 D&D session excerpt:
 The staged `tests/dnd_24aug_90s.wav` is excluded from git via the existing
 `*.wav` rule in `.gitignore` line 1.
 
+## Local Image Rebuild + Replica (2026-08-08)
+
+The segment-merger fix lives in `modules/` (whisper/data_classes.py,
+whisper/segment_merger.py, diarize/diarizer.py) — files that are NOT bind-mounted
+in the production `containers-gpu` deployment. To deploy the fix to production,
+the image must be rebuilt. This section documents how to rebuild the image
+locally and verify the fix in a local replica that mirrors the production
+dual-service topology.
+
+### Image tag convention
+
+| Tag | Built | Notes |
+|-----|-------|-------|
+| `swear0.3.5` | upstream | Pre-segment-merger baseline |
+| `swear0.3.6` | upstream | Pre-segment-merger (default fallback) |
+| `swear0.3.7` | local fork | **Contains segment-merger fix** (commit `da2e2e2`) |
+
+Only `swear0.3.7` is built locally (tagged, not pushed to quay.io). Production
+deployment to `containers-gpu` is a separate operation not covered here.
+
+### Why `.dockerignore` had to change
+
+`.dockerignore` excludes `modules/` (it was added in upstream commit `a32e8ff`
+when the upstream build context didn't include modules). Without a negation,
+the Dockerfile's `COPY . .` (runtime stage, line 41) would silently skip
+`modules/whisper/data_classes.py`, `modules/whisper/segment_merger.py`, and
+`modules/diarize/diarizer.py` — producing an image that LOOKS like it contains
+the fix but doesn't. The negation patterns `!modules/` and `!modules/**` were
+appended to `.dockerignore` so the fix is baked into the image.
+
+**Critical verification (after every rebuild):** confirm md5 of the three fix
+files INSIDE the image matches the host md5. Inside the image they live at
+`/Whisper-WebUI-Swear-Removal/modules/...`. Example for the current build:
+
+```bash
+docker run --rm --entrypoint /bin/bash \
+  quay.io/sovens/transcription/whisper-webui-backend:swear0.3.7 \
+  -c "md5sum /Whisper-WebUI-Swear-Removal/modules/whisper/data_classes.py \
+         /Whisper-WebUI-Swear-Removal/modules/whisper/segment_merger.py \
+         /Whisper-WebUI-Swear-Removal/modules/diarize/diarizer.py"
+
+# Expected output (2026-08-08):
+# 66d00240f54e6fe656a1eeb581a9395b  data_classes.py
+# 970205788d9af9f572f92e1fd25a11bb  segment_merger.py
+# 1b0ff85670d99cea22e48e98215dc34d  diarizer.py
+```
+
+### Local replica topology
+
+`local-replica/docker-compose.local-replica.yaml` defines two services matching
+the production `containers-gpu` topology:
+
+| Service | Host port | Container | Config | Model |
+|---------|-----------|-----------|--------|-------|
+| `backend-app` | 8001 | `backend-app-1` | `config.yaml` (small) | `small` |
+| `backend-transcription` | 8002 | `backend-transcription-1` | `config-largev2.yaml` (mounted `:ro`) | `large-v2` |
+
+Both run the same image tag (`swear0.3.7`) with bind mounts to
+`backend/`, `models/`, `outputs/` on the host. The compose file uses `../`
+prefix in volume paths because Compose resolves relative paths from the compose
+file's directory (`local-replica/`).
+
+### Rebuild + verify procedure
+
+```bash
+# 1. Source HF_TOKEN (pyannote model requires it)
+set -a && source backend/.env && set +a
+
+# 2. Rebuild image from current working tree (~8 min)
+docker build -f backend/Dockerfile \
+  -t quay.io/sovens/transcription/whisper-webui-backend:swear0.3.7 .
+
+# 3. Verify fix is baked in (md5 check above)
+
+# 4. Stop existing container (preserve for rollback — NOT docker rm)
+docker stop backend-app-1
+docker rename backend-app-1 backend-app-1.swear0.3.5.rollback
+
+# 5. Launch dual-service replica
+cd local-replica && docker compose -f docker-compose.local-replica.yaml up -d && cd ..
+
+# 6. Wait for /docs to respond on both ports (~60s for large-v2 model load)
+for port in 8001 8002; do
+  for i in {1..30}; do
+    curl -sf "http://localhost:${port}/docs" >/dev/null 2>&1 && echo ":${port} OK" && break
+    sleep 3
+  done
+done
+
+# 7. Run in-container validation
+bash local-replica/run-functional-test.sh backend-app-1
+```
+
+### Rollback
+
+```bash
+docker stop backend-app-1 backend-transcription-1
+docker rename backend-app-1.swear0.3.5.rollback backend-app-1
+docker start backend-app-1
+```
+
+### In-container validation note
+
+The production image does NOT include `pytest`. `local-replica/run-functional-test.sh`
+uses `in_container_validation.py` (a standalone script that replicates the EXACT
+assertions of `tests/test_merger_diarization_functional.py`) instead of pytest.
+The validation logic — `WhisperFactory.create_whisper_inference("faster-whisper").transcribe_file(...)`
+followed by `SPEAKER_MID_LINE_RE` scan — is byte-equivalent to the test. The
+standalone script is staged into the container at `/tmp/` via `docker cp`.
+
 ## Adaptation Notes
 
 Plan-vs-reality deviations recorded per the planning protocol (A13):
@@ -129,6 +239,11 @@ Plan-vs-reality deviations recorded per the planning protocol (A13):
 | `_hparams(merge_max_words=N)` forwards to model | Added `merge_max_words=merge_max_words` to `WhisperParams(...)` constructor call | Plan bug — original call dropped the parameter, making merge-on/merge-off comparison a false negative |
 | Commit 7 files | Commit 6 files (3 production + 2 tests + 1 doc) | `.gitignore` excluded since no edit was needed |
 | Code comment on `"None"` sentinel string | Documented here in maintenance doc instead | Repo follows zero-comment convention; ADVISORY #5 from code review |
+| `config-largev2.yaml` exists as a file | Was an empty directory (placeholder); recreated as a file with `model_size: large-v2` and `enable_offload: true` | Pre-T4 should have run `ls -la backend/configs/` to verify (T1 preflight lesson) |
+| Image build works with `.dockerignore` as-is | Appended `!modules/` and `!modules/**` negation | `.dockerignore` excluded `modules/` which would have silently skipped the segment-merger fix at build time |
+| Run `pytest` in container | Run `in_container_validation.py` instead | pytest is a dev dependency, not in the production image. Standalone script replicates the test's assertions byte-for-byte. |
+| `.gitignore` needs new line for staged WAV/logs | Added `logs/` and `*.log` rules | Plan §Task 5 captured container logs; existing `.gitignore` didn't cover them |
+| Commit only plan-in-scope files | 6 files staged: 3 new in `local-replica/`, 1 new `config-largev2.yaml`, 2 modified (`.dockerignore`, `.gitignore`), 1 doc update | 7 other files have pre-existing uncommitted working-tree changes from production tuning — out of scope for this plan; will be a separate commit |
 
 ## Testing
 
