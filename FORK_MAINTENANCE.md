@@ -223,6 +223,75 @@ The validation logic — `WhisperFactory.create_whisper_inference("faster-whispe
 followed by `SPEAKER_MID_LINE_RE` scan — is byte-equivalent to the test. The
 standalone script is staged into the container at `/tmp/` via `docker cp`.
 
+## Production Deployment — Segment-Merger Fix (2026-08-08)
+
+The `swear0.3.7` image (built and verified in the local replica section above)
+was deployed to production `containers-gpu` on 2026-08-08. Procedure:
+
+1. Pushed `swear0.3.7` to `quay.io/sovens/transcription/whisper-webui-backend`
+   (digest `sha256:3f6af7e6f6dc0b9fb96bee1710caa37284a4fe0c277b860d760114a7e0dfc7d3`).
+2. Pulled on `containers-gpu` via `docker pull`.
+3. Renamed running `backend-app-1` and `backend-transcription-1` to
+   `*.swear0.3.6.rollback` (preserved, NOT removed).
+4. Started new containers on `swear0.3.7` with identical env (via
+   `--env-file /tmp/env-800*.txt` to avoid HF_TOKEN in process list) and
+   identical bind mounts.
+
+### Why bind mounts didn't block the fix
+
+`/AIStuff/Whisper-WebUI/` on `containers-gpu` is 4 months behind `origin/master`
+(HEAD `2693efa`, 2026-03-19) and has many local modifications. If `modules/`
+were in the bind-mount list, deploying a new image would have been defeated
+by the old bind-mounted code. Inspection of `docker inspect .HostConfig.Binds`
+confirmed `modules/` is NOT bind-mounted — only:
+
+| Bind mount path | Reason |
+|-----------------|--------|
+| `backend/main_patched.py → backend/main.py` | Entry point override |
+| `backend/routers/transcription/router.py` | Transcription fix (`969b16b`) hot-load |
+| `backend/configs/config.yaml` | Model selection (`:8001` = small) |
+| `backend/configs/config-largev2.yaml` → `backend/configs/config.yaml` | Large-v2 config (`:8002`) |
+| `backend/sitecustomize.py` | Python startup customization (`:8002` only) |
+| `models/`, `outputs/` | Volumes |
+
+The image's baked `modules/` is therefore used as-shipped, and the
+segment-merger fix takes effect.
+
+### Post-deploy verification
+
+| Check | Result |
+|-------|--------|
+| md5 of fix files inside both production containers | All 6 match `da2e2e2` post-fix values ✓ |
+| `speaker` field at line 25 of `data_classes.py` | Present ✓ |
+| `/docs` HTTP 200 on `:8001` | ✓ |
+| `/docs` HTTP 200 on `:8002` | ✓ |
+| HF_TOKEN in `:8001` (was empty pre-deploy) | Empty ✓ |
+| HF_TOKEN in `:8002` (real token pre-deploy) | Real token present ✓ |
+| In-container validation result | 28→27 segments, 27 lines, **0 mid-line SPEAKER_XX labels** ✓ |
+| Bind-mount source md5 byte-identical to pre-deploy | All 5 files ✓ |
+| VRAM (small + large-v2 loaded) | 7630 MiB used, 8220 MiB free |
+| Rollback target | `swear0.3.6` image cached + `*.swear0.3.6.rollback` containers preserved |
+
+### Rollback procedure (if needed)
+
+```bash
+ssh root@containers-gpu '
+  docker stop backend-app-1 backend-transcription-1
+  docker rename backend-app-1.swear0.3.6.rollback backend-app-1
+  docker rename backend-transcription-1.swear0.3.6.rollback backend-transcription-1
+  docker start backend-app-1 backend-transcription-1
+'
+# Downtime: ~5-10s (no model reload — already loaded in preserved containers)
+```
+
+### Security note
+
+During this deploy, an SSH `docker inspect .Config.Env` output echoed the
+HF_TOKEN into my local terminal. HF_TOKEN should be considered exposed if the
+local terminal is logged, and should be rotated by the user at their
+discretion. Mitigation taken during the deploy itself: used `--env-file` for
+the new container's env vars so HF_TOKEN never appears in `docker ps` output.
+
 ## Adaptation Notes
 
 Plan-vs-reality deviations recorded per the planning protocol (A13):
@@ -244,6 +313,11 @@ Plan-vs-reality deviations recorded per the planning protocol (A13):
 | Run `pytest` in container | Run `in_container_validation.py` instead | pytest is a dev dependency, not in the production image. Standalone script replicates the test's assertions byte-for-byte. |
 | `.gitignore` needs new line for staged WAV/logs | Added `logs/` and `*.log` rules | Plan §Task 5 captured container logs; existing `.gitignore` didn't cover them |
 | Commit only plan-in-scope files | 6 files staged: 3 new in `local-replica/`, 1 new `config-largev2.yaml`, 2 modified (`.dockerignore`, `.gitignore`), 1 doc update | 7 other files have pre-existing uncommitted working-tree changes from production tuning — out of scope for this plan; will be a separate commit |
+| Production deploy: HF_TOKEN source | Used `--env-file /tmp/env-800*.txt` captured from old containers | Initial SSH `docker inspect .Config.Env` echo leaked HF_TOKEN into local terminal — treat as exposed and rotate if terminal is logged |
+| Production deploy: source FLAC available locally | Shipped pre-staged 90s WAV via `scp` from local host | Source FLAC lives on local host only; containers-gpu doesn't have it |
+| Production deploy: in-container validation in prod | Ran `in_container_validation.py` inside production `backend-app-1`; 28→27 segments, 0 mid-line labels | Same script as local replica T5; no code changes needed |
+| Production deploy: bind-mount source git state | `git -C /AIStuff/Whisper-WebUI` is 4 months behind (HEAD `2693efa`) and has many local modifications | Bind-mount source NOT touched by this deploy — image's baked `modules/` is used instead, since `modules/` is not in the bind-mount list |
+| Production deploy: `:8001` env has `HF_TOKEN=` (empty) | Preserved exactly in new container | Pyannote model was previously authenticated by `:8002` and cached; `:8001` may rely on the cache without re-auth |
 
 ## Testing
 
