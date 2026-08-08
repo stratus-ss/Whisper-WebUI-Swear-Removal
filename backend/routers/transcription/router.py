@@ -1,6 +1,7 @@
 import functools
 import uuid
 import numpy as np
+import logging
 from fastapi import (
     File,
     UploadFile,
@@ -58,38 +59,51 @@ def run_transcription(
     params: TranscriptionPipelineParams,
     identifier: str,
 ) -> List[Segment]:
-    update_task_status_in_db(
-        identifier=identifier,
-        update_data={
-            "uuid": identifier,
-            "status": TaskStatus.IN_PROGRESS,
-            "updated_at": datetime.utcnow()
-        },
-    )
+    try:
+        update_task_status_in_db(
+            identifier=identifier,
+            update_data={
+                "uuid": identifier,
+                "status": TaskStatus.IN_PROGRESS,
+                "updated_at": datetime.utcnow()
+            },
+        )
 
-    progress_callback = create_progress_callback(identifier)
-    segments, elapsed_time = get_pipeline().run(
-        audio,
-        gr.Progress(),
-        "SRT",
-        False,
-        progress_callback,  
-        *params.to_list()
-    )
-    segments = [seg.model_dump() for seg in segments]
+        progress_callback = create_progress_callback(identifier)
+        segments, elapsed_time = get_pipeline().run(
+            audio,
+            gr.Progress(),
+            "SRT",
+            False,
+            progress_callback,
+            *params.to_list()
+        )
+        segments = [seg.model_dump() for seg in segments]
 
-    update_task_status_in_db(
-        identifier=identifier,
-        update_data={
-            "uuid": identifier,
-            "status": TaskStatus.COMPLETED,
-            "result": segments,
-            "updated_at": datetime.utcnow(),
-            "duration": elapsed_time,
-            "progress": 1.0,
-        },
-    )
-    return segments
+        update_task_status_in_db(
+            identifier=identifier,
+            update_data={
+                "uuid": identifier,
+                "status": TaskStatus.COMPLETED,
+                "result": segments,
+                "updated_at": datetime.utcnow(),
+                "duration": elapsed_time,
+                "progress": 1.0,
+            },
+        )
+        return segments
+    except Exception as e:
+        logging.exception(f"Transcription task {identifier} failed: {e}")
+        update_task_status_in_db(
+            identifier=identifier,
+            update_data={
+                "uuid": identifier,
+                "status": TaskStatus.FAILED,
+                "error": str(e),
+                "updated_at": datetime.utcnow()
+            },
+        )
+        raise
 
 
 @transcription_router.post(
@@ -107,6 +121,11 @@ async def transcription(
     bgm_separation_params: BGMSeparationParams = Depends(),
     diarization_params: DiarizationParams = Depends(),
 ) -> QueueResponse:
+    server_whisper_config = load_server_config()["whisper"]
+    whisper_params.model_size = server_whisper_config["model_size"]
+    whisper_params.compute_type = server_whisper_config["compute_type"]
+    whisper_params.enable_offload = server_whisper_config["enable_offload"]
+
     if not isinstance(file, np.ndarray):
         audio, info = await read_audio(file=file)
     else:
