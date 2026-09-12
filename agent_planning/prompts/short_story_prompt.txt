@@ -1,0 +1,93 @@
+I want you to write a story that is suitable for TTS. I want this story to include every day language to help me better learn Spanish. Use Timo_La-Magia-Antigua_libro3_cueva_azul_sequel.txt to give you the idea/level of my spanish currently but I need specific help with social situations. I have the feeling that something similar to a sitcom would help dial in that language. Output the file to ./tmp/MINMAX_Piso.txt
+
+For inspiration I want you to use the Big Bang Theory and Eureka and Extr@ Spanish (Youtube/Early 2000s British learning show). I also really liked Avenue 5. I am a tech professional so I like nerdy things, computers, dungeons and dragons, etc etc. One of my favourite comodies was Better Off Ted. The focus should be light and very humourus
+
+I want you to write this book in 3 parts with each part having between 3500 and 4500 words. Once you have completed part 1, stop
+
+
+Use Narrator for non-dialogue lines and character names with F-<name> or M-<name> to indicate male or female characters. Only do this at the start of the lines which indicate who is speaking. You will find examples of this formatting in Nodo_Rais. The names need to be wrapped in angle brackets like <Narrator> so that the TTS engine ignores them. This formatting must be used for each story in this thread.
+
+here is an example of a story that uses the character tags appropriately. They are not html tags
+
+<Narrator> Tres semanas después de la operación del daemon libre, Mateo llegó al trabajo con una taza de café en la mano y una sensación extraña en el estómago.
+
+<Narrator> Todo parecía normal en la superficie. Los servidores corrían bien. Los servicios del gobierno local respondían sin problemas. Pero él sabía que, en los logs, había algo esperando.
+
+<M-Mateo> —[soft voice] Buenos días, sistema. ¿Qué tienes para mí hoy?
+
+<Narrator> Se sentó frente a su terminal Linux y abrió el visor de alertas del daemon libre.
+
+<Narrator> En las últimas horas, el sistema había registrado cuatro nuevas conexiones externas. Todas provenían de direcciones IP diferentes, pero todas usaban el mismo formato de mensaje que el sistema VEGA.
+
+<F-Lara> —[excited] Mateo, mira esto. —Lara entró rápido y señaló su propia pantalla.— Tengo las mismas cuatro conexiones en mi reporte de la noche. Y las IPs no son de una sola ciudad. Son de tres ciudades distintas.
+
+
+
+use the following to augment the story telling
+
+Voice Style Tags
+
+    [whispering] — hushed, breathy
+
+    [soft voice] — quiet and gentle
+
+    [loud voice] — raised volume
+
+    [shouting] — full volume
+
+    [low voice] — deeper register
+
+Emotion Tags
+
+    [excited] — high energy, upbeat
+
+    [angry] — harsh, forceful
+
+    [sad] — heavy, downcast
+
+Breathing & Reaction Tags
+
+    [sigh] — expressive exhale
+
+    [inhale] / [exhale] — audible breath
+
+    [gasp] — sharp intake
+
+    [panting] — heavy, rapid breathing
+
+    [clears throat] — throat-clearing before speaking
+
+Vocal Sound Tags
+
+    [laughing] — full laughter
+
+    [chuckling] — quiet, contained laugh
+
+    [giggle] — light, high-pitched
+
+    [sobbing] — crying with breath
+
+    [crying] — tears audible in voice
+
+    [groan] — discomfort or exasperation
+
+Pacing Tags
+
+    [pause] — brief silence
+
+    [short pause] — shorter beat
+
+    [long pause] — extended silence
+
+Emphasis
+
+    [emphasis] — stress on the following word (e.g. you need to [emphasis] stop)
+
+Ambient
+
+    [rustling sound] — background rustling
+
+
+You are to plan to create multiple sequels of this book but we are only going to work on one story at a time. We just need to keep in mind that there will be sequels. 
+
+for each story can, if there is quoted dialogue, can you start the line with the character's name so that when I apply voice, I know which voices to use

@@ -1,0 +1,9 @@
+# Exclude large/regeneratable snapshots from git
+*.json
+*.bin
+*.img
+*.tar.gz
+*.zip
+# Keep README and small manifests
+!README.md
+!*.md
